@@ -170,49 +170,6 @@ class ChatElementByText(Text):
                        xpath="//android.view.ViewGroup//android.widget.TextView[contains(@text,'%s')]" % text)
         return element.is_element_displayed(wait_time)
 
-    @property
-    def accept_and_share_address(self):
-        class AcceptAndShareAddress(Button):
-            def __init__(self, driver, parent_locator):
-                super().__init__(driver, prefix=parent_locator, translation_id="accept-and-share-address")
-
-            def navigate(self):
-                from views.send_transaction_view import SendTransactionView
-                return SendTransactionView(self.driver)
-
-            def click(self):
-                self.wait_for_element().click()
-                return self.navigate()
-
-        return AcceptAndShareAddress(self.driver, self.locator)
-
-    @property
-    def decline_transaction(self):
-        class DeclineTransaction(Button):
-            def __init__(self, driver, parent_locator):
-                super().__init__(driver, prefix=parent_locator, translation_id="decline")
-
-            def click(self):
-                self.wait_for_element().click()
-                return self.navigate()
-
-        return DeclineTransaction(self.driver, self.locator)
-
-    @property
-    def sign_and_send(self):
-        class SignAndSend(Button):
-            def __init__(self, driver, parent_locator):
-                super().__init__(driver, prefix=parent_locator, translation_id="sign-and-send")
-
-            def navigate(self):
-                from views.send_transaction_view import SendTransactionView
-                return SendTransactionView(self.driver)
-
-            def click(self):
-                self.wait_for_element().click()
-                return self.navigate()
-
-        return SignAndSend(self.driver, self.locator)
 
     @property
     def replied_message_text(self):
@@ -292,6 +249,68 @@ class GroupChatInfoView(BaseView):
     def get_user_from_group_info(self, username: str):
         return Text(self.driver, xpath="//*[@text='%s']" % username)
 
+
+class OutgoingTransaction(ChatElementByText):
+    def __init__(self, driver, account_name: str):
+        super().__init__(driver, text="↑ Outgoing transaction")
+        self.account_name = account_name
+        self.address_requested = self.get_translation_by_key("address-requested")
+        self.address_request_accepted = self.get_translation_by_key("address-request-accepted")
+        self.confirmed = self.get_translation_by_key("status-confirmed")
+
+    @property
+    def sign_and_send(self):
+        class SignAndSend(Button):
+            def __init__(self, driver, parent_locator):
+                super().__init__(driver, prefix=parent_locator, translation_id="sign-and-send")
+
+            def navigate(self):
+                from views.send_transaction_view import SendTransactionView
+                return SendTransactionView(self.driver)
+
+            def click(self):
+                self.wait_for_element().click()
+                return self.navigate()
+
+        return SignAndSend(self.driver, self.locator)
+
+class IncomingTransaction(ChatElementByText):
+    def __init__(self, driver, account_name: str):
+        super().__init__(driver, text="↓ Incoming transaction")
+        self.account_name = account_name
+        self.address_requested = self.get_translation_by_key("address-requested")
+        self.shared_account = "Shared '%s'" % account_name
+        self.confirmed = self.get_translation_by_key("status-confirmed")
+
+    @property
+    def decline_transaction(self):
+        class DeclineTransaction(Button):
+            def __init__(self, driver, parent_locator):
+                super().__init__(driver, prefix=parent_locator, translation_id="decline")
+
+            def click(self):
+                self.wait_for_element().click()
+                return self.navigate()
+
+        return DeclineTransaction(self.driver, self.locator)
+
+    @property
+    def accept_and_share_address(self):
+        class AcceptAndShareAddress(Button):
+            def __init__(self, driver, parent_locator):
+                super().__init__(driver, prefix=parent_locator, translation_id="accept-and-share-address")
+
+            def navigate(self):
+                from views.send_transaction_view import SendTransactionView
+                return SendTransactionView(self.driver)
+
+            def click(self):
+                self.wait_for_element().click()
+                return self.navigate()
+
+        return AcceptAndShareAddress(self.driver, self.locator)
+
+
 class ChatView(BaseView):
     def __init__(self, driver):
         super().__init__(driver)
@@ -325,6 +344,16 @@ class ChatView(BaseView):
         self.commands_button = Button(self.driver, accessibility_id="show-extensions-icon")
         self.send_command = SendCommand(self.driver)
         self.request_command = RequestCommand(self.driver)
+
+        # Commands
+        #
+        # self.outgoing_transaction = OutgoingTransaction(self.driver, account_name='Ethereum account')
+        # self.incoming_transaction = IncomingTransaction(self.driver, account_name='Ethereum account')
+        # self.command_message_status = {
+        #     "accept": self.get_translation_by_key("accept-and-share-address"),
+        #     "decline": self.get_translation_by_key("decline"),
+        #     "confirmed":self.get_translation_by_key("status-confirmed")
+        # }
 
         #Stickers
         self.show_stickers_button = Button(self.driver, accessibility_id="show-stickers-icon")
@@ -399,6 +428,13 @@ class ChatView(BaseView):
         self.timeline_my_status_editbox = EditBox(self.driver, accessibility_id="my-status-input")
         self.timeline_open_images_panel_button = Button(self.driver, accessibility_id="open-images-panel-button")
         self.timeline_send_my_status_button = Button(self.driver, accessibility_id="send-my-status-button")
+
+    def get_outgoing_transaction(self, account='Ethereum account'):
+        return OutgoingTransaction(self.driver, account)
+
+    def get_incoming_transaction(self, account='Ethereum account'):
+        return IncomingTransaction(self.driver, account)
+
 
     def delete_chat(self):
         self.driver.info("**Delete chat via options**")
